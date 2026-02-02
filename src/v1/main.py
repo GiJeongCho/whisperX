@@ -148,14 +148,35 @@ def health_check():
 
 @app.post("/transcribe")
 async def transcribe_audio(
-    file: UploadFile = File(...),
-    language: Optional[str] = Form(None),
-    batch_size: int = Form(BATCH_SIZE),
-    align: bool = Form(True)
+    file: UploadFile = File(..., description="변환할 오디오 파일입니다. (지원 형식: mp3, wav, m4a 등)"),
+    language: Optional[str] = Form("ko", description="언어 코드입니다 (예: 'en', 'ko'). 기본값은 'ko'입니다. None으로 설정하면 언어를 자동으로 감지합니다."),
+    batch_size: int = Form(16, description="인퍼런스 배치 크기입니다. 값이 클수록 처리 속도는 빨라지지만 VRAM 사용량이 증가합니다."),
+    beam_size: int = Form(5, description="빔 탐색(Beam Search)의 크기입니다. 빔 탐색은 여러 가능성을 동시에 고려하여 가장 확률이 높은 문장을 찾는 알고리즘입니다. 값이 클수록 정확도는 높아지지만 속도는 느려집니다. (기본값: 5)"),
+    patience: float = Form(1.0, description="빔 탐색의 인내심 계수(Patience Factor)입니다. 1.0이면 최적의 결과를 찾았다고 판단되면 즉시 멈추고, 값이 클수록 더 오래 탐색합니다."),
+    length_penalty: float = Form(1.0, description="생성된 문장의 길이에 대한 페널티입니다. 1.0보다 크면 긴 문장을 선호하고, 작으면 짧은 문장을 선호합니다."),
+    temperature: float = Form(0.0, description="샘플링 온도(Temperature)입니다. 0.0은 가장 확률이 높은 단어만 선택(Greedy Decoding)하며, 값이 클수록 더 다양하고 창의적인(하지만 덜 정확할 수 있는) 결과를 생성합니다."),
+    compression_ratio_threshold: float = Form(2.4, description="압축률 임계값입니다. 생성된 텍스트의 gzip 압축률이 이 값보다 높으면(너무 반복적인 텍스트 등), 디코딩 실패로 간주하고 다른 온도값으로 재시도합니다."),
+    log_prob_threshold: float = Form(-1.0, description="평균 로그 확률 임계값입니다. 생성된 토큰들의 평균 확률이 이 값보다 낮으면(확신이 없으면), 디코딩 실패로 간주합니다."),
+    no_speech_threshold: float = Form(0.6, description="묵음 감지 임계값입니다. <|nospeech|> 토큰의 확률이 이 값보다 높고, 평균 로그 확률이 `log_prob_threshold`보다 낮으면 해당 구간을 묵음으로 처리합니다."),
+    condition_on_previous_text: bool = Form(False, description="이전 텍스트 문맥 사용 여부입니다. True로 설정하면 모델이 이전 윈도우의 텍스트를 프롬프트로 사용하여 문맥을 파악합니다. (환각 현상이 발생할 수 있어 기본값은 False입니다.)"),
+    initial_prompt: Optional[str] = Form(None, description="초기 프롬프트입니다. 모델에게 문맥 정보나 스타일, 고유명사 등을 미리 알려주어 인식 정확도를 높일 수 있습니다."),
+    suppress_tokens: str = Form("-1", description="생성을 억제할 토큰 ID 목록입니다(쉼표로 구분). '-1'은 기본 억제 토큰들을 사용합니다."),
+    align: bool = Form(True, description="강제 정렬(Forced Alignment) 수행 여부입니다. True일 경우, 인식된 텍스트와 오디오를 정렬하여 정확한 단어 단위 타임스탬프를 생성합니다."),
+    # VAD Parameters
+    vad_onset: float = Form(0.500, description="VAD(음성 활동 감지) 시작 임계값입니다. 이 값보다 확률이 높아야 음성 구간으로 인식하기 시작합니다. (기본값: 0.500)"),
+    vad_offset: float = Form(0.363, description="VAD 종료 임계값입니다. 음성 구간 중 확률이 이 값보다 낮아지면 묵음으로 간주하고 구간을 종료합니다. (기본값: 0.363)"),
+    chunk_size: int = Form(30, description="VAD 처리를 위한 청크 크기(초 단위)입니다. (기본값: 30)")
 ):
     """
-    Transcribe audio file using WhisperX.
-    Optionally performs forced alignment.
+    Transcribe audio file using WhisperX with configurable parameters.
+    
+    - **file**: Audio file to transcribe
+    - **language**: Language code (default: "ko")
+    - **batch_size**: Batch size for inference (default: 16)
+    - **beam_size**: Beam size for beam search (default: 5)
+    - **align**: Whether to perform forced alignment (default: True)
+    - **vad_onset**: VAD onset threshold (default: 0.500)
+    - **vad_offset**: VAD offset threshold (default: 0.363)
     """
     if not model_pipeline:
         logger.error("Model not initialized.")
@@ -176,8 +197,63 @@ async def transcribe_audio(
         logger.info("Starting transcription...")
         audio = whisperx.load_audio(temp_file_path)
         
-        # If language is not provided, it will be detected
-        result = model_pipeline.transcribe(audio, batch_size=batch_size, language=language)
+        # Parse suppress_tokens
+        suppress_tokens_list = [int(x) for x in suppress_tokens.split(",")] if suppress_tokens else [-1]
+
+        # Use updated VAD parameters if needed (WhisperX pipeline manages VAD internally based on load options,
+        # but we can override some via transcription options if supported, or we might need to reload VAD.
+        # However, WhisperX pipeline structure fixes VAD parameters at initialization.
+        # To support dynamic VAD params, we would need to manually run VAD here or modify the pipeline.
+        # FasterWhisperPipeline in whisperX allows passing vad_params to transcribe() method indirectly?
+        # Checking source: transcribe() calls merge_chunks using self._vad_params. 
+        # But we can monkey-patch or pass them if the method allows.
+        # Looking at FasterWhisperPipeline.transcribe source: 
+        # It uses self._vad_params["vad_onset"] etc. 
+        # We can temporarily update these parameters or pass them if transcribe supported it.
+        # The transcribe method in asr.py does NOT take vad_onset/offset as arguments.
+        # It uses self._vad_params.
+        # So we will update the pipeline's vad_params temporarily.
+        
+        original_vad_params = model_pipeline._vad_params.copy()
+        model_pipeline._vad_params["vad_onset"] = vad_onset
+        model_pipeline._vad_params["vad_offset"] = vad_offset
+        # chunk_size is used in merge_chunks
+        
+        # Prepare ASR options
+        # Note: FasterWhisperPipeline.transcribe takes specific kwargs, but deeper configuration 
+        # is stored in model_pipeline.options (TranscriptionOptions).
+        # We need to update model_pipeline.options for beam_size etc.
+        
+        original_options = model_pipeline.options
+        # Create a new options object or update existing (dataclass replacement is cleaner)
+        from dataclasses import replace
+        new_options = replace(
+            original_options,
+            beam_size=beam_size,
+            patience=patience,
+            length_penalty=length_penalty,
+            temperatures=[temperature] if isinstance(temperature, float) else temperature,
+            compression_ratio_threshold=compression_ratio_threshold,
+            log_prob_threshold=log_prob_threshold,
+            no_speech_threshold=no_speech_threshold,
+            condition_on_previous_text=condition_on_previous_text,
+            initial_prompt=initial_prompt,
+            suppress_tokens=suppress_tokens_list
+        )
+        model_pipeline.options = new_options
+
+        try:
+            # If language is not provided, it will be detected
+            result = model_pipeline.transcribe(
+                audio, 
+                batch_size=batch_size, 
+                language=language,
+                chunk_size=chunk_size
+            )
+        finally:
+            # Revert options to defaults (thread safety issue if concurrent requests, but this is a simple PoC)
+            model_pipeline.options = original_options
+            model_pipeline._vad_params = original_vad_params
         
         # Log detected language
         detected_lang = result.get("language", language)
