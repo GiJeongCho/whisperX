@@ -1,0 +1,27 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual Environment
+.venv/
+venv/
+env/
+
+# Models
+src/resources/models/
+models/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Project
+.uv/
+uv.lock
+dist/
+build/
+*.egg-info/
+
