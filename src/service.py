@@ -1,0 +1,264 @@
+import os
+import gc
+import logging
+import torch
+import whisperx
+import yaml
+import tempfile
+import traceback
+from typing import Dict, Optional, Any
+from dataclasses import replace
+import pandas as pd
+
+# Configure Logging
+logger = logging.getLogger(__name__)
+
+class WhisperXService:
+    def __init__(self):
+        self.model_pipeline = None
+        self.diarize_model = None
+        self.diarization_error = None  # 에러 메시지 저장용
+        self.align_models: Dict[str, tuple] = {}  # {lang: (model, metadata)}
+        
+        # Configuration
+        self.model_dir = os.getenv("WHISPER_MODEL_DIR", "src/resources/models")
+        self.whisper_arch = os.getenv("WHISPER_ARCH", "large-v3")
+        self.device = "cuda" if torch.cuda.is_available() else "cpu"
+        self.compute_type = "float16" if torch.cuda.is_available() else "int8"
+        self.hf_token = os.getenv("HF_TOKEN") # Hugging Face Token for Pyannote
+
+    def _log_directory_contents(self, path: str, name: str):
+        """Helper to log contents of a model directory."""
+        if os.path.exists(path):
+            files = os.listdir(path)
+            display_files = files[:5]
+            remaining = len(files) - 5
+            suffix = f"... and {remaining} more" if remaining > 0 else ""
+            logger.info(f"[{name}] Directory found at {path}. Files: {display_files} {suffix}")
+        else:
+            logger.warning(f"[{name}] Directory NOT found at {path}")
+
+    def load_models(self):
+        """Load all necessary models (Whisper, Alignment, Diarization)."""
+        logger.info(f"Loading WhisperX models on {self.device} ({self.compute_type})...")
+        logger.info(f"HF_TOKEN detected: {'Yes' if self.hf_token else 'No'}")
+        
+        # 1. Load Whisper Model
+        whisper_dir = os.path.join(self.model_dir, "whisper")
+        self._log_directory_contents(whisper_dir, "Whisper")
+        os.makedirs(whisper_dir, exist_ok=True)
+        
+        try:
+            self.model_pipeline = whisperx.load_model(
+                self.whisper_arch, 
+                device=self.device, 
+                compute_type=self.compute_type, 
+                download_root=whisper_dir
+            )
+            logger.info("Whisper model loaded.")
+        except Exception as e:
+            logger.error(f"Failed to load Whisper model: {e}")
+            raise
+
+        # 2. Load Alignment Models (Pre-load en/ko)
+        alignment_dir = os.path.join(self.model_dir, "alignment")
+        self._log_directory_contents(alignment_dir, "Alignment")
+        os.makedirs(alignment_dir, exist_ok=True)
+        for lang in ["en", "ko"]:
+            try:
+                self._load_align_model(lang, alignment_dir)
+            except Exception as e:
+                logger.warning(f"Could not pre-load alignment for {lang}: {e}")
+
+        # 3. Load Diarization Model (Offline Mode)
+        diar_dir = os.path.join(self.model_dir, "diarization")
+        vad_dir = os.path.join(self.model_dir, "vad")
+        emb_dir = os.path.join(self.model_dir, "embedding")
+        
+        self._log_directory_contents(diar_dir, "Diarization")
+        self._log_directory_contents(vad_dir, "VAD")
+        self._log_directory_contents(emb_dir, "Embedding")
+        
+        logger.info("Loading Diarization model (Offline Mode)...")
+        
+        try:
+            # 원본 config.yaml 읽기
+            config_path = os.path.join(diar_dir, "config.yaml")
+            if not os.path.exists(config_path):
+                raise FileNotFoundError(f"Diarization config not found at {config_path}")
+                
+            with open(config_path, "r") as f:
+                config = yaml.safe_load(f)
+
+            # 로컬 경로 주입 (절대 경로로 변환)
+            vad_model_path = os.path.abspath(os.path.join(vad_dir, "pytorch_model.bin"))
+            emb_model_path = os.path.abspath(os.path.join(emb_dir, "pytorch_model.bin"))
+            
+            # config 수정: HF repo ID -> 로컬 파일 경로
+            config["pipeline"]["params"]["segmentation"] = vad_model_path
+            config["pipeline"]["params"]["embedding"] = emb_model_path
+
+            # 수정된 config를 임시 파일로 저장하여 로드
+            with tempfile.NamedTemporaryFile(mode="w", suffix=".yaml", delete=False) as tmp_config:
+                yaml.dump(config, tmp_config)
+                tmp_config_path = tmp_config.name
+            
+            logger.info(f"Using modified config at {tmp_config_path} for offline loading.")
+            
+            # Pipeline 로드
+            from pyannote.audio import Pipeline
+            self.diarize_model = Pipeline.from_pretrained(
+                tmp_config_path
+            )
+            
+            # GPU 설정
+            if self.device == "cuda":
+                self.diarize_model.to(torch.device("cuda"))
+
+            logger.info("Diarization model loaded successfully (Offline).")
+            self.diarization_error = None
+            
+            # 임시 파일 삭제
+            os.remove(tmp_config_path)
+
+        except Exception as e:
+            logger.error(f"Failed to load Diarization model: {e}")
+            self.diarization_error = str(e)
+            self.diarize_model = None
+
+    def _load_align_model(self, language_code: str, model_dir: str):
+        if language_code not in self.align_models:
+            model, metadata = whisperx.load_align_model(
+                language_code=language_code,
+                device=self.device,
+                model_dir=model_dir
+            )
+            self.align_models[language_code] = (model, metadata)
+    
+    def transcribe_audio(
+        self,
+        audio_path: str,
+        language: Optional[str] = None,
+        batch_size: int = 16,
+        align: bool = True,
+        diarize: bool = False,
+        min_speakers: Optional[int] = None,
+        max_speakers: Optional[int] = None,
+        vad_params: Optional[dict] = None,
+        options_dict: Optional[dict] = None
+    ) -> Dict[str, Any]:
+        
+        if not self.model_pipeline:
+            raise RuntimeError("Models not initialized.")
+
+        audio = whisperx.load_audio(audio_path)
+        
+        # Update VAD params
+        original_vad = self.model_pipeline._vad_params.copy()
+        if vad_params:
+            self.model_pipeline._vad_params.update(vad_params)
+            
+        # Update Options
+        original_options = self.model_pipeline.options
+        if options_dict:
+            new_options = replace(original_options, **options_dict)
+            self.model_pipeline.options = new_options
+
+        diarization_status = "disabled"
+
+        try:
+            # 1. Transcribe
+            result = self.model_pipeline.transcribe(
+                audio, 
+                batch_size=batch_size, 
+                language=language
+            )
+            
+            detected_lang = result["language"]
+            
+            # 2. Align
+            if align:
+                if detected_lang not in self.align_models:
+                    # Try to load on demand
+                    try:
+                        self._load_align_model(detected_lang, os.path.join(self.model_dir, "alignment"))
+                    except Exception:
+                        logger.warning(f"Alignment model for {detected_lang} unavailable.")
+                
+                if detected_lang in self.align_models:
+                    model_a, metadata = self.align_models[detected_lang]
+                    result = whisperx.align(
+                        result["segments"],
+                        model_a,
+                        metadata,
+                        audio,
+                        self.device,
+                        return_char_alignments=False
+                    )
+
+            # 3. Diarize
+            if diarize:
+                if self.diarize_model:
+                    try:
+                        logger.info("Running Diarization...")
+                        
+                        # Use audio tensor directly to avoid re-reading file and potential issues
+                        # whisperx.load_audio returns numpy array (float32, 16kHz)
+                        # Pyannote expects {'waveform': (channel, time), 'sample_rate': 16000}
+                        
+                        waveform = torch.from_numpy(audio).unsqueeze(0) # (1, time)
+                        if self.device == "cuda":
+                            waveform = waveform.to("cuda")
+                            
+                        diarize_input = {"waveform": waveform, "sample_rate": 16000}
+                        
+                        diarize_segments = self.diarize_model(
+                            diarize_input,
+                            min_speakers=min_speakers,
+                            max_speakers=max_speakers
+                        )
+                        
+                        # Convert Annotation to Pandas DataFrame for whisperx
+                        diarize_df = pd.DataFrame(
+                            diarize_segments.itertracks(yield_label=True), 
+                            columns=['segment', 'label', 'speaker']
+                        )
+                        diarize_df['start'] = diarize_df['segment'].apply(lambda x: x.start)
+                        diarize_df['end'] = diarize_df['segment'].apply(lambda x: x.end)
+                        
+                        result = whisperx.assign_word_speakers(diarize_df, result)
+                        diarization_status = "success"
+                    except Exception as e:
+                        logger.error(f"Diarization runtime error: {e}")
+                        logger.error(traceback.format_exc())
+                        diarization_status = f"failed_runtime: {repr(e)}"
+                else:
+                    logger.warning("Diarization requested but model not available. Skipping.")
+                    error_msg = self.diarization_error if self.diarization_error else "unknown_load_failure"
+                    diarization_status = f"skipped_model_not_loaded: {error_msg}"
+
+            return {
+                "result": result,
+                "meta": {
+                    "diarization_status": diarization_status
+                }
+            }
+
+        finally:
+            # Restore configuration
+            self.model_pipeline._vad_params = original_vad
+            self.model_pipeline.options = original_options
+            
+            # GPU cleanup
+            if self.device == "cuda":
+                torch.cuda.empty_cache()
+                gc.collect()
+
+    def get_status(self):
+        return {
+            "device": self.device,
+            "whisper_model": self.whisper_arch,
+            "diarization_enabled": self.diarize_model is not None,
+            "diarization_error": self.diarization_error,
+            "alignment_langs": list(self.align_models.keys())
+        }
