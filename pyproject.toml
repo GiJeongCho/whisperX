@@ -8,7 +8,16 @@ dependencies = [
     "fastapi>=0.109.0",
     "uvicorn>=0.27.0",
     "python-multipart>=0.0.6",
-    "whisperx" 
+    # "whisperx"  # Removed as we will install deps directly
+    "ctranslate2>=4.5.0",
+    "faster-whisper>=1.1.1",
+    "nltk>=3.9.1",
+    "numpy>=2.1.0",
+    "pandas>=2.2.3",
+    "pyannote-audio>=3.3.2,<4.0.0",
+    "huggingface-hub<1.0.0",
+    "transformers>=4.48.0",
+    "triton>=3.3.0; sys_platform == 'linux' and platform_machine == 'x86_64'"
 ]
 
 [build-system]
@@ -20,7 +29,7 @@ build-backend = "hatchling.build"
 packages = ["src"]
 
 [tool.uv.sources]
-whisperx = { path = "../whisperX", editable = true }
+# whisperx = { path = "./whisperx", editable = true } # We will rely on requirements.txt or direct inclusion
 
 # Sync with whisperX pyproject.toml settings
 [[tool.uv.index]]

@@ -66,10 +66,15 @@ def background_process(
     try:
         jobs[job_id]["status"] = "processing"
         jobs[job_id]["started_at"] = get_kst_now_iso()
+        jobs[job_id]["progress"] = {"step": "starting", "percent": 0}
         start_time = time.time()
         
         logger.info(f"[Job {job_id}] Processing {filename}...")
-        
+
+        def _on_progress(step: str, percent: int) -> None:
+            jobs[job_id]["progress"] = {"step": step, "percent": percent}
+            logger.info(f"[Job {job_id}] Progress: {step} {percent}%")
+
         result_data = service.transcribe_audio(
             audio_path=temp_file_path,
             language=language,
@@ -79,7 +84,8 @@ def background_process(
             min_speakers=min_speakers,
             max_speakers=max_speakers,
             vad_params=vad_params,
-            options_dict=options_dict
+            options_dict=options_dict,
+            on_progress=_on_progress,
         )
         
         result = result_data["result"]
@@ -88,6 +94,7 @@ def background_process(
         process_time = time.time() - start_time
         jobs[job_id]["status"] = "completed"
         jobs[job_id]["completed_at"] = get_kst_now_iso()
+        jobs[job_id]["progress"] = {"step": "done", "percent": 100}
         jobs[job_id]["result"] = {
             "segments": result["segments"],
             "language": result.get("language"),
@@ -100,6 +107,8 @@ def background_process(
         logger.error(f"[Job {job_id}] Failed: {e}", exc_info=True)
         jobs[job_id]["status"] = "failed"
         jobs[job_id]["error"] = str(e)
+        current_step = jobs[job_id].get("progress", {}).get("step", "unknown")
+        jobs[job_id]["progress"] = {"step": f"failed_at_{current_step}", "percent": -1}
     finally:
         if os.path.exists(temp_file_path):
             try:

@@ -6,9 +6,11 @@ import whisperx
 import yaml
 import tempfile
 import traceback
-from typing import Dict, Optional, Any
+from typing import Dict, Optional, Any, Callable
 from dataclasses import replace
 import pandas as pd
+
+ProgressCallback = Callable[[str, int], None]
 
 # Configure Logging
 logger = logging.getLogger(__name__)
@@ -135,6 +137,21 @@ class WhisperXService:
             )
             self.align_models[language_code] = (model, metadata)
     
+    def _calculate_step_weights(self, align: bool, diarize: bool):
+        # 기본 가중치
+        weights = {"transcribe": 0.0, "align": 0.0, "diarize": 0.0}
+        
+        if align and diarize:
+            weights = {"transcribe": 60, "align": 10, "diarize": 30}
+        elif align and not diarize:
+            weights = {"transcribe": 80, "align": 20, "diarize": 0}
+        elif not align and diarize:
+            weights = {"transcribe": 70, "align": 0, "diarize": 30}
+        else:
+            weights = {"transcribe": 100, "align": 0, "diarize": 0}
+            
+        return weights
+
     def transcribe_audio(
         self,
         audio_path: str,
@@ -145,20 +162,30 @@ class WhisperXService:
         min_speakers: Optional[int] = None,
         max_speakers: Optional[int] = None,
         vad_params: Optional[dict] = None,
-        options_dict: Optional[dict] = None
+        options_dict: Optional[dict] = None,
+        on_progress: Optional[ProgressCallback] = None,
     ) -> Dict[str, Any]:
         
         if not self.model_pipeline:
             raise RuntimeError("Models not initialized.")
 
+        weights = self._calculate_step_weights(align, diarize)
+        base_progress = 0
+
+        def update_progress(step_name, current_percent):
+            nonlocal base_progress
+            # 현재 단계의 시작점 + (현재 단계 진행률 * 현재 단계 가중치 / 100)
+            step_weight = weights[step_name]
+            total_percent = base_progress + (current_percent * step_weight / 100)
+            if on_progress:
+                on_progress(step_name, int(total_percent))
+
         audio = whisperx.load_audio(audio_path)
         
-        # Update VAD params
         original_vad = self.model_pipeline._vad_params.copy()
         if vad_params:
             self.model_pipeline._vad_params.update(vad_params)
             
-        # Update Options
         original_options = self.model_pipeline.options
         if options_dict:
             new_options = replace(original_options, **options_dict)
@@ -168,18 +195,26 @@ class WhisperXService:
 
         try:
             # 1. Transcribe
+            update_progress("transcribe", 0)
+            
+            def transcribe_callback(percent):
+                update_progress("transcribe", percent)
+
             result = self.model_pipeline.transcribe(
                 audio, 
                 batch_size=batch_size, 
-                language=language
+                language=language,
+                progress_callback=transcribe_callback
             )
+            base_progress += weights["transcribe"]
+            update_progress("transcribe", 100)
             
             detected_lang = result["language"]
             
             # 2. Align
             if align:
+                update_progress("align", 0)
                 if detected_lang not in self.align_models:
-                    # Try to load on demand
                     try:
                         self._load_align_model(detected_lang, os.path.join(self.model_dir, "alignment"))
                     except Exception:
@@ -187,26 +222,30 @@ class WhisperXService:
                 
                 if detected_lang in self.align_models:
                     model_a, metadata = self.align_models[detected_lang]
+                    
+                    def align_callback(percent):
+                        update_progress("align", percent)
+
                     result = whisperx.align(
                         result["segments"],
                         model_a,
                         metadata,
                         audio,
                         self.device,
-                        return_char_alignments=False
+                        return_char_alignments=False,
+                        progress_callback=align_callback
                     )
+                base_progress += weights["align"]
+                update_progress("align", 100)
 
             # 3. Diarize
             if diarize:
+                update_progress("diarize", 0)
                 if self.diarize_model:
                     try:
                         logger.info("Running Diarization...")
                         
-                        # Use audio tensor directly to avoid re-reading file and potential issues
-                        # whisperx.load_audio returns numpy array (float32, 16kHz)
-                        # Pyannote expects {'waveform': (channel, time), 'sample_rate': 16000}
-                        
-                        waveform = torch.from_numpy(audio).unsqueeze(0) # (1, time)
+                        waveform = torch.from_numpy(audio).unsqueeze(0)
                         if self.device == "cuda":
                             waveform = waveform.to("cuda")
                             
@@ -218,7 +257,6 @@ class WhisperXService:
                             max_speakers=max_speakers
                         )
                         
-                        # Convert Annotation to Pandas DataFrame for whisperx
                         diarize_df = pd.DataFrame(
                             diarize_segments.itertracks(yield_label=True), 
                             columns=['segment', 'label', 'speaker']
@@ -236,6 +274,9 @@ class WhisperXService:
                     logger.warning("Diarization requested but model not available. Skipping.")
                     error_msg = self.diarization_error if self.diarization_error else "unknown_load_failure"
                     diarization_status = f"skipped_model_not_loaded: {error_msg}"
+                
+                base_progress += weights["diarize"]
+                update_progress("diarize", 100)
 
             return {
                 "result": result,
@@ -245,11 +286,9 @@ class WhisperXService:
             }
 
         finally:
-            # Restore configuration
             self.model_pipeline._vad_params = original_vad
             self.model_pipeline.options = original_options
             
-            # GPU cleanup
             if self.device == "cuda":
                 torch.cuda.empty_cache()
                 gc.collect()

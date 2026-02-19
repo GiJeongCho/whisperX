@@ -1,0 +1,12 @@
+ctranslate2>=4.5.0
+faster-whisper>=1.1.1
+nltk>=3.9.1
+numpy>=2.1.0
+pandas>=2.2.3
+pyannote-audio>=3.3.2,<4.0.0
+huggingface-hub<1.0.0
+transformers>=4.48.0
+triton>=3.3.0
+fastapi
+uvicorn
+python-multipart
