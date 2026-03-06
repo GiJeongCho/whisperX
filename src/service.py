@@ -197,14 +197,10 @@ class WhisperXService:
             # 1. Transcribe
             update_progress("transcribe", 0)
             
-            def transcribe_callback(percent):
-                update_progress("transcribe", percent)
-
             result = self.model_pipeline.transcribe(
                 audio, 
                 batch_size=batch_size, 
                 language=language,
-                progress_callback=transcribe_callback
             )
             base_progress += weights["transcribe"]
             update_progress("transcribe", 100)
@@ -223,9 +219,6 @@ class WhisperXService:
                 if detected_lang in self.align_models:
                     model_a, metadata = self.align_models[detected_lang]
                     
-                    def align_callback(percent):
-                        update_progress("align", percent)
-
                     result = whisperx.align(
                         result["segments"],
                         model_a,
@@ -233,7 +226,6 @@ class WhisperXService:
                         audio,
                         self.device,
                         return_char_alignments=False,
-                        progress_callback=align_callback
                     )
                 base_progress += weights["align"]
                 update_progress("align", 100)
