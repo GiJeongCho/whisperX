@@ -4,7 +4,6 @@ import logging
 import torch
 import whisperx
 import yaml
-import tempfile
 import traceback
 from typing import Dict, Optional, Any, Callable
 from dataclasses import replace
@@ -100,28 +99,38 @@ class WhisperXService:
             config["pipeline"]["params"]["segmentation"] = vad_model_path
             config["pipeline"]["params"]["embedding"] = emb_model_path
 
-            # 수정된 config를 임시 파일로 저장하여 로드
-            with tempfile.NamedTemporaryFile(mode="w", suffix=".yaml", delete=False) as tmp_config:
-                yaml.dump(config, tmp_config)
-                tmp_config_path = tmp_config.name
-            
-            logger.info(f"Using modified config at {tmp_config_path} for offline loading.")
-            
-            # Pipeline 로드
-            from pyannote.audio import Pipeline
-            self.diarize_model = Pipeline.from_pretrained(
-                tmp_config_path
+            plda_dir = os.path.abspath(os.path.join(diar_dir, "plda"))
+            plda_xvec = os.path.join(plda_dir, "xvec_transform.npz")
+            plda_file = os.path.join(plda_dir, "plda.npz")
+
+            logger.info(f"PLDA xvec: {plda_xvec} (exists: {os.path.exists(plda_xvec)})")
+            logger.info(f"PLDA plda: {plda_file} (exists: {os.path.exists(plda_file)})")
+
+            from pyannote.audio.pipelines.speaker_diarization import SpeakerDiarization
+            from pyannote.audio.core.plda import PLDA
+
+            plda_obj = PLDA(plda_xvec, plda_file)
+
+            self.diarize_model = SpeakerDiarization(
+                segmentation=vad_model_path,
+                embedding=emb_model_path,
+                plda=plda_obj,
+                embedding_batch_size=config["pipeline"]["params"].get("embedding_batch_size", 32),
+                embedding_exclude_overlap=config["pipeline"]["params"].get("embedding_exclude_overlap", True),
+                segmentation_batch_size=config["pipeline"]["params"].get("segmentation_batch_size", 32),
             )
-            
-            # GPU 설정
+
+            params = config.get("params", {})
+            instantiate_params = {}
+            if "segmentation" in params:
+                instantiate_params["segmentation"] = params["segmentation"]
+            self.diarize_model.instantiate(instantiate_params)
+
             if self.device == "cuda":
                 self.diarize_model.to(torch.device("cuda"))
 
             logger.info("Diarization model loaded successfully (Offline).")
             self.diarization_error = None
-            
-            # 임시 파일 삭제
-            os.remove(tmp_config_path)
 
         except Exception as e:
             logger.error(f"Failed to load Diarization model: {e}")

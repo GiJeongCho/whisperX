@@ -1,0 +1,168 @@
+INFO:     Will watch for changes in these directories: ['/home/pps-nipa/PoC/fish/stt']
+INFO:     Uvicorn running on http://0.0.0.0:8012 (Press CTRL+C to quit)
+INFO:     Started reloader process [1838301] using StatReload
+INFO:     Started server process [1838306]
+INFO:     Waiting for application startup.
+2026-03-13 15:34:16,217 - src.service - INFO - Loading WhisperX models on cuda (float16)...
+2026-03-13 15:34:16,217 - src.service - INFO - HF_TOKEN detected: No
+2026-03-13 15:34:16,217 - src.service - INFO - [Whisper] Directory found at src/resources/models/whisper. Files: ['.locks', 'model.bin', 'preprocessor_config.json', '.gitattributes', 'tokenizer.json'] ... and 5 more
+/home/pps-nipa/PoC/fish/stt/.venv/lib/python3.10/site-packages/pyannote/audio/core/io.py:212: UserWarning: torchaudio._backend.list_audio_backends has been deprecated. This deprecation is part of a large refactoring effort to transition TorchAudio into a maintenance phase. The decoding and encoding capabilities of PyTorch for both audio and video are being consolidated into TorchCodec. Please see https://github.com/pytorch/audio/issues/3902 for more information. It will be removed from the 2.9 release. 
+  torchaudio.list_audio_backends()
+/home/pps-nipa/PoC/fish/stt/.venv/lib/python3.10/site-packages/speechbrain/utils/torch_audio_backend.py:57: UserWarning: torchaudio._backend.list_audio_backends has been deprecated. This deprecation is part of a large refactoring effort to transition TorchAudio into a maintenance phase. The decoding and encoding capabilities of PyTorch for both audio and video are being consolidated into TorchCodec. Please see https://github.com/pytorch/audio/issues/3902 for more information. It will be removed from the 2.9 release. 
+  available_backends = torchaudio.list_audio_backends()
+2026-03-13 15:34:19,234 - speechbrain.utils.checkpoints - DEBUG - Registered checkpoint save hook for _speechbrain_save
+2026-03-13 15:34:19,234 - speechbrain.utils.checkpoints - DEBUG - Registered checkpoint load hook for _speechbrain_load
+2026-03-13 15:34:19,234 - speechbrain.utils.checkpoints - DEBUG - Registered checkpoint save hook for save
+2026-03-13 15:34:19,234 - speechbrain.utils.checkpoints - DEBUG - Registered checkpoint load hook for load
+2026-03-13 15:34:19,375 - speechbrain.utils.quirks - INFO - Applied quirks (see `speechbrain.utils.quirks`): [disable_jit_profiling, allow_tf32]
+2026-03-13 15:34:19,376 - speechbrain.utils.quirks - INFO - Excluded quirks specified by the `SB_DISABLE_QUIRKS` environment (comma-separated list): []
+2026-03-13 15:34:19,377 - speechbrain.utils.checkpoints - DEBUG - Registered checkpoint save hook for _save
+2026-03-13 15:34:19,377 - speechbrain.utils.checkpoints - DEBUG - Registered checkpoint load hook for _recover
+2026-03-13 15:34:22 - whisperx.asr - INFO - No language specified, language will be detected for each audio file (increases inference time)
+2026-03-13 15:34:22 - whisperx.vads.pyannote - INFO - Performing voice activity detection using Pyannote...
+2026-03-13 15:34:22,641 - pytorch_lightning.utilities.migration.utils - INFO - Lightning automatically upgraded your loaded checkpoint from v1.5.4 to v2.6.1. To apply the upgrade to your files permanently, run `python -m pytorch_lightning.utilities.upgrade_checkpoint whisperX/whisperx/assets/pytorch_model.bin`
+/home/pps-nipa/PoC/fish/stt/.venv/lib/python3.10/site-packages/pyannote/audio/core/io.py:212: UserWarning: torchaudio._backend.list_audio_backends has been deprecated. This deprecation is part of a large refactoring effort to transition TorchAudio into a maintenance phase. The decoding and encoding capabilities of PyTorch for both audio and video are being consolidated into TorchCodec. Please see https://github.com/pytorch/audio/issues/3902 for more information. It will be removed from the 2.9 release. 
+  torchaudio.list_audio_backends()
+2026-03-13 15:34:22,692 - src.service - INFO - Whisper model loaded.
+2026-03-13 15:34:22,692 - src.service - INFO - [Alignment] Directory found at src/resources/models/alignment. Files: ['ko', 'wav2vec2_fairseq_base_ls960_asr_ls960.pth', '.locks', 'models--kresnik--wav2vec2-large-xlsr-korean', 'en'] 
+2026-03-13 15:34:26,678 - src.service - INFO - [Diarization] Directory found at src/resources/models/diarization. Files: ['config.yaml', 'reproducible_research', 'handler.py', '.gitattributes', '.github'] ... and 3 more
+2026-03-13 15:34:26,678 - src.service - INFO - [VAD] Directory found at src/resources/models/vad. Files: ['example.png', 'config.yaml', 'pytorch_model.bin', '.gitattributes', 'LICENSE'] ... and 2 more
+2026-03-13 15:34:26,678 - src.service - INFO - [Embedding] Directory found at src/resources/models/embedding. Files: ['config.yaml', 'pytorch_model.bin', '.gitattributes', '.cache', 'README.md'] 
+2026-03-13 15:34:26,679 - src.service - INFO - Loading Diarization model (Offline Mode)...
+2026-03-13 15:34:26,681 - src.service - INFO - Using modified config at /tmp/tmp_0vpofdz.yaml for offline loading.
+2026-03-13 15:34:26,840 - src.service - INFO - Diarization model loaded successfully (Offline).
+INFO:     Application startup complete.
+Model was trained with pyannote.audio 0.0.1, yours is 3.4.0. Bad things might happen unless you revert pyannote.audio to 0.x.
+Model was trained with torch 1.10.0+cu102, yours is 2.8.0+cu128. Bad things might happen unless you revert torch to 1.x.
+INFO:     127.0.0.1:37764 - "GET /docs HTTP/1.1" 200 OK
+INFO:     127.0.0.1:37766 - "GET /docs HTTP/1.1" 200 OK
+INFO:     127.0.0.1:37766 - "GET /openapi.json HTTP/1.1" 200 OK
+WARNING:  StatReload detected changes in 'src/api.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [1838306]
+INFO:     Started server process [1859120]
+INFO:     Waiting for application startup.
+2026-03-13 15:45:19,353 - src.service - INFO - Loading WhisperX models on cuda (float16)...
+2026-03-13 15:45:19,353 - src.service - INFO - HF_TOKEN detected: No
+2026-03-13 15:45:19,353 - src.service - INFO - [Whisper] Directory found at src/resources/models/whisper. Files: ['.locks', 'model.bin', 'preprocessor_config.json', '.gitattributes', 'tokenizer.json'] ... and 5 more
+/home/pps-nipa/PoC/fish/stt/.venv/lib/python3.10/site-packages/pyannote/audio/core/io.py:212: UserWarning: torchaudio._backend.list_audio_backends has been deprecated. This deprecation is part of a large refactoring effort to transition TorchAudio into a maintenance phase. The decoding and encoding capabilities of PyTorch for both audio and video are being consolidated into TorchCodec. Please see https://github.com/pytorch/audio/issues/3902 for more information. It will be removed from the 2.9 release. 
+  torchaudio.list_audio_backends()
+/home/pps-nipa/PoC/fish/stt/.venv/lib/python3.10/site-packages/speechbrain/utils/torch_audio_backend.py:57: UserWarning: torchaudio._backend.list_audio_backends has been deprecated. This deprecation is part of a large refactoring effort to transition TorchAudio into a maintenance phase. The decoding and encoding capabilities of PyTorch for both audio and video are being consolidated into TorchCodec. Please see https://github.com/pytorch/audio/issues/3902 for more information. It will be removed from the 2.9 release. 
+  available_backends = torchaudio.list_audio_backends()
+2026-03-13 15:45:22,358 - speechbrain.utils.checkpoints - DEBUG - Registered checkpoint save hook for _speechbrain_save
+2026-03-13 15:45:22,358 - speechbrain.utils.checkpoints - DEBUG - Registered checkpoint load hook for _speechbrain_load
+2026-03-13 15:45:22,359 - speechbrain.utils.checkpoints - DEBUG - Registered checkpoint save hook for save
+2026-03-13 15:45:22,359 - speechbrain.utils.checkpoints - DEBUG - Registered checkpoint load hook for load
+2026-03-13 15:45:22,502 - speechbrain.utils.quirks - INFO - Applied quirks (see `speechbrain.utils.quirks`): [allow_tf32, disable_jit_profiling]
+2026-03-13 15:45:22,506 - speechbrain.utils.quirks - INFO - Excluded quirks specified by the `SB_DISABLE_QUIRKS` environment (comma-separated list): []
+2026-03-13 15:45:22,507 - speechbrain.utils.checkpoints - DEBUG - Registered checkpoint save hook for _save
+2026-03-13 15:45:22,507 - speechbrain.utils.checkpoints - DEBUG - Registered checkpoint load hook for _recover
+2026-03-13 15:45:26 - whisperx.asr - INFO - No language specified, language will be detected for each audio file (increases inference time)
+2026-03-13 15:45:26 - whisperx.vads.pyannote - INFO - Performing voice activity detection using Pyannote...
+2026-03-13 15:45:26,116 - pytorch_lightning.utilities.migration.utils - INFO - Lightning automatically upgraded your loaded checkpoint from v1.5.4 to v2.6.1. To apply the upgrade to your files permanently, run `python -m pytorch_lightning.utilities.upgrade_checkpoint whisperX/whisperx/assets/pytorch_model.bin`
+/home/pps-nipa/PoC/fish/stt/.venv/lib/python3.10/site-packages/pyannote/audio/core/io.py:212: UserWarning: torchaudio._backend.list_audio_backends has been deprecated. This deprecation is part of a large refactoring effort to transition TorchAudio into a maintenance phase. The decoding and encoding capabilities of PyTorch for both audio and video are being consolidated into TorchCodec. Please see https://github.com/pytorch/audio/issues/3902 for more information. It will be removed from the 2.9 release. 
+  torchaudio.list_audio_backends()
+2026-03-13 15:45:26,167 - src.service - INFO - Whisper model loaded.
+2026-03-13 15:45:26,167 - src.service - INFO - [Alignment] Directory found at src/resources/models/alignment. Files: ['ko', 'wav2vec2_fairseq_base_ls960_asr_ls960.pth', '.locks', 'models--kresnik--wav2vec2-large-xlsr-korean', 'en'] 
+2026-03-13 15:45:31,555 - src.service - INFO - [Diarization] Directory found at src/resources/models/diarization. Files: ['config.yaml', 'reproducible_research', 'handler.py', '.gitattributes', '.github'] ... and 3 more
+2026-03-13 15:45:31,555 - src.service - INFO - [VAD] Directory found at src/resources/models/vad. Files: ['example.png', 'config.yaml', 'pytorch_model.bin', '.gitattributes', 'LICENSE'] ... and 2 more
+2026-03-13 15:45:31,555 - src.service - INFO - [Embedding] Directory found at src/resources/models/embedding. Files: ['config.yaml', 'pytorch_model.bin', '.gitattributes', '.cache', 'README.md'] 
+2026-03-13 15:45:31,555 - src.service - INFO - Loading Diarization model (Offline Mode)...
+2026-03-13 15:45:31,560 - src.service - INFO - Using modified config at /tmp/tmpcoipdgqk.yaml for offline loading.
+2026-03-13 15:45:31,819 - src.service - INFO - Diarization model loaded successfully (Offline).
+INFO:     Application startup complete.
+WARNING:  Invalid HTTP request received.
+Model was trained with pyannote.audio 0.0.1, yours is 3.4.0. Bad things might happen unless you revert pyannote.audio to 0.x.
+Model was trained with torch 1.10.0+cu102, yours is 2.8.0+cu128. Bad things might happen unless you revert torch to 1.x.
+INFO:     167.94.138.189:34888 - "GET / HTTP/1.1" 404 Not Found
+WARNING:  Invalid HTTP request received.
+INFO:     167.94.138.189:42062 - "GET / HTTP/1.1" 404 Not Found
+INFO:     167.94.138.189:42086 - "PRI %2A HTTP/2.0" 404 Not Found
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+INFO:     167.94.138.189:42152 - "GET /robots.txt HTTP/1.1" 404 Not Found
+WARNING:  Invalid HTTP request received.
+INFO:     162.142.125.194:62216 - "GET / HTTP/1.1" 404 Not Found
+WARNING:  Invalid HTTP request received.
+INFO:     162.142.125.194:47652 - "GET / HTTP/1.1" 404 Not Found
+INFO:     162.142.125.194:47654 - "PRI %2A HTTP/2.0" 404 Not Found
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+INFO:     162.142.125.194:42506 - "GET /security.txt HTTP/1.1" 404 Not Found
+WARNING:  Invalid HTTP request received.
+INFO:     167.94.146.53:4188 - "GET / HTTP/1.1" 404 Not Found
+WARNING:  Invalid HTTP request received.
+INFO:     167.94.146.53:62676 - "GET / HTTP/1.1" 404 Not Found
+INFO:     167.94.146.53:62744 - "PRI %2A HTTP/2.0" 404 Not Found
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+INFO:     167.94.146.53:25226 - "GET /security.txt HTTP/1.1" 404 Not Found
+INFO:     45.135.194.49:17476 - "GET /../../../../../../etc/passwd HTTP/1.1" 404 Not Found
+WARNING:  Invalid HTTP request received.
+INFO:     199.45.155.95:43114 - "GET / HTTP/1.1" 404 Not Found
+WARNING:  Invalid HTTP request received.
+INFO:     199.45.155.95:7584 - "GET / HTTP/1.1" 404 Not Found
+INFO:     199.45.155.95:7600 - "PRI %2A HTTP/2.0" 404 Not Found
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+INFO:     199.45.155.95:20036 - "GET /.well-known/security.txt HTTP/1.1" 404 Not Found
+WARNING:  Invalid HTTP request received.
+INFO:     167.94.138.34:16836 - "GET / HTTP/1.1" 404 Not Found
+INFO:     167.94.138.34:16842 - "PRI %2A HTTP/2.0" 404 Not Found
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+INFO:     167.94.138.34:36360 - "GET /robots.txt HTTP/1.1" 404 Not Found
+WARNING:  Invalid HTTP request received.
+INFO:     47.77.233.17:19918 - "GET / HTTP/1.1" 404 Not Found
+INFO:     123.160.223.72:23519 - "GET / HTTP/1.1" 404 Not Found
+WARNING:  Invalid HTTP request received.
+INFO:     195.184.76.38:48037 - "GET / HTTP/1.1" 404 Not Found
+INFO:     91.230.168.236:55341 - "GET /favicon.ico HTTP/1.1" 404 Not Found
+WARNING:  Invalid HTTP request received.
+INFO:     167.94.146.55:10124 - "GET / HTTP/1.1" 404 Not Found
+WARNING:  Invalid HTTP request received.
+INFO:     167.94.146.55:55796 - "GET / HTTP/1.1" 404 Not Found
+INFO:     167.94.146.55:55840 - "PRI %2A HTTP/2.0" 404 Not Found
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+INFO:     167.94.146.55:55922 - "GET /sitemap.xml HTTP/1.1" 404 Not Found
+WARNING:  StatReload detected changes in 'src/api.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [1859120]
+INFO:     Started server process [2920332]
+INFO:     Waiting for application startup.
+2026-03-18 10:12:47,583 - src.service - INFO - Loading WhisperX models on cuda (float16)...
+2026-03-18 10:12:47,583 - src.service - INFO - HF_TOKEN detected: No
+2026-03-18 10:12:47,584 - src.service - INFO - [Whisper] Directory found at src/resources/models/whisper. Files: ['.locks', 'model.bin', 'preprocessor_config.json', '.gitattributes', 'tokenizer.json'] ... and 5 more
+/home/pps-nipa/PoC/fish/stt/.venv/lib/python3.10/site-packages/pyannote/audio/core/io.py:212: UserWarning: torchaudio._backend.list_audio_backends has been deprecated. This deprecation is part of a large refactoring effort to transition TorchAudio into a maintenance phase. The decoding and encoding capabilities of PyTorch for both audio and video are being consolidated into TorchCodec. Please see https://github.com/pytorch/audio/issues/3902 for more information. It will be removed from the 2.9 release. 
+  torchaudio.list_audio_backends()
+/home/pps-nipa/PoC/fish/stt/.venv/lib/python3.10/site-packages/speechbrain/utils/torch_audio_backend.py:57: UserWarning: torchaudio._backend.list_audio_backends has been deprecated. This deprecation is part of a large refactoring effort to transition TorchAudio into a maintenance phase. The decoding and encoding capabilities of PyTorch for both audio and video are being consolidated into TorchCodec. Please see https://github.com/pytorch/audio/issues/3902 for more information. It will be removed from the 2.9 release. 
+  available_backends = torchaudio.list_audio_backends()
+2026-03-18 10:12:50,920 - speechbrain.utils.checkpoints - DEBUG - Registered checkpoint save hook for _speechbrain_save
+2026-03-18 10:12:50,920 - speechbrain.utils.checkpoints - DEBUG - Registered checkpoint load hook for _speechbrain_load
+2026-03-18 10:12:50,920 - speechbrain.utils.checkpoints - DEBUG - Registered checkpoint save hook for save
+2026-03-18 10:12:50,920 - speechbrain.utils.checkpoints - DEBUG - Registered checkpoint load hook for load
+2026-03-18 10:12:51,134 - speechbrain.utils.quirks - INFO - Applied quirks (see `speechbrain.utils.quirks`): [allow_tf32, disable_jit_profiling]
+2026-03-18 10:12:51,135 - speechbrain.utils.quirks - INFO - Excluded quirks specified by the `SB_DISABLE_QUIRKS` environment (comma-separated list): []
+2026-03-18 10:12:51,137 - speechbrain.utils.checkpoints - DEBUG - Registered checkpoint save hook for _save
+2026-03-18 10:12:51,137 - speechbrain.utils.checkpoints - DEBUG - Registered checkpoint load hook for _recover
+2026-03-18 10:12:55 - whisperx.asr - INFO - No language specified, language will be detected for each audio file (increases inference time)
+2026-03-18 10:12:55 - whisperx.vads.pyannote - INFO - Performing voice activity detection using Pyannote...
+2026-03-18 10:12:55,683 - pytorch_lightning.utilities.migration.utils - INFO - Lightning automatically upgraded your loaded checkpoint from v1.5.4 to v2.6.1. To apply the upgrade to your files permanently, run `python -m pytorch_lightning.utilities.upgrade_checkpoint whisperX/whisperx/assets/pytorch_model.bin`
+/home/pps-nipa/PoC/fish/stt/.venv/lib/python3.10/site-packages/pyannote/audio/core/io.py:212: UserWarning: torchaudio._backend.list_audio_backends has been deprecated. This deprecation is part of a large refactoring effort to transition TorchAudio into a maintenance phase. The decoding and encoding capabilities of PyTorch for both audio and video are being consolidated into TorchCodec. Please see https://github.com/pytorch/audio/issues/3902 for more information. It will be removed from the 2.9 release. 
+  torchaudio.list_audio_backends()
+2026-03-18 10:12:55,831 - src.service - INFO - Whisper model loaded.
+2026-03-18 10:12:55,832 - src.service - INFO - [Alignment] Directory found at src/resources/models/alignment. Files: ['ko', 'wav2vec2_fairseq_base_ls960_asr_ls960.pth', '.locks', 'models--kresnik--wav2vec2-large-xlsr-korean', 'en'] 
+2026-03-18 10:13:01,729 - src.service - INFO - [Diarization] Directory found at src/resources/models/diarization. Files: ['config.yaml', 'reproducible_research', 'handler.py', '.gitattributes', '.github'] ... and 3 more
+2026-03-18 10:13:01,730 - src.service - INFO - [VAD] Directory found at src/resources/models/vad. Files: ['example.png', 'config.yaml', 'pytorch_model.bin', '.gitattributes', 'LICENSE'] ... and 2 more
+2026-03-18 10:13:01,730 - src.service - INFO - [Embedding] Directory found at src/resources/models/embedding. Files: ['config.yaml', 'pytorch_model.bin', '.gitattributes', '.cache', 'README.md'] 
+2026-03-18 10:13:01,730 - src.service - INFO - Loading Diarization model (Offline Mode)...
+2026-03-18 10:13:01,732 - src.service - INFO - Using modified config at /tmp/tmpfyfu70lh.yaml for offline loading.
+2026-03-18 10:13:02,438 - src.service - INFO - Diarization model loaded successfully (Offline).
+INFO:     Application startup complete.
+/home/pps-nipa/anaconda3/envs/whisperX/lib/python3.10/multiprocessing/resource_tracker.py:224: UserWarning: resource_tracker: There appear to be 3 leaked semaphore objects to clean up at shutdown
+  warnings.warn('resource_tracker: There appear to be %d '

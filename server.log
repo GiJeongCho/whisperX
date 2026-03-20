@@ -1,0 +1,81 @@
+nohup: ignoring input
+INFO:     Will watch for changes in these directories: ['/home/pps-nipa/PoC/fish/stt']
+INFO:     Uvicorn running on http://0.0.0.0:8012 (Press CTRL+C to quit)
+INFO:     Started reloader process [3524539] using StatReload
+INFO:     Started server process [3524543]
+INFO:     Waiting for application startup.
+2026-03-18 16:42:15,705 - src.service - INFO - Loading WhisperX models on cuda (float16)...
+2026-03-18 16:42:15,705 - src.service - INFO - HF_TOKEN detected: No
+2026-03-18 16:42:15,705 - src.service - INFO - [Whisper] Directory found at src/resources/models/whisper. Files: ['.locks', 'model.bin', 'preprocessor_config.json', '.gitattributes', 'tokenizer.json'] ... and 5 more
+/home/pps-nipa/PoC/fish/stt/.venv/lib/python3.10/site-packages/pyannote/audio/core/io.py:212: UserWarning: torchaudio._backend.list_audio_backends has been deprecated. This deprecation is part of a large refactoring effort to transition TorchAudio into a maintenance phase. The decoding and encoding capabilities of PyTorch for both audio and video are being consolidated into TorchCodec. Please see https://github.com/pytorch/audio/issues/3902 for more information. It will be removed from the 2.9 release. 
+  torchaudio.list_audio_backends()
+/home/pps-nipa/PoC/fish/stt/.venv/lib/python3.10/site-packages/speechbrain/utils/torch_audio_backend.py:57: UserWarning: torchaudio._backend.list_audio_backends has been deprecated. This deprecation is part of a large refactoring effort to transition TorchAudio into a maintenance phase. The decoding and encoding capabilities of PyTorch for both audio and video are being consolidated into TorchCodec. Please see https://github.com/pytorch/audio/issues/3902 for more information. It will be removed from the 2.9 release. 
+  available_backends = torchaudio.list_audio_backends()
+2026-03-18 16:42:18,644 - speechbrain.utils.checkpoints - DEBUG - Registered checkpoint save hook for _speechbrain_save
+2026-03-18 16:42:18,645 - speechbrain.utils.checkpoints - DEBUG - Registered checkpoint load hook for _speechbrain_load
+2026-03-18 16:42:18,645 - speechbrain.utils.checkpoints - DEBUG - Registered checkpoint save hook for save
+2026-03-18 16:42:18,645 - speechbrain.utils.checkpoints - DEBUG - Registered checkpoint load hook for load
+2026-03-18 16:42:18,790 - speechbrain.utils.quirks - INFO - Applied quirks (see `speechbrain.utils.quirks`): [allow_tf32, disable_jit_profiling]
+2026-03-18 16:42:18,791 - speechbrain.utils.quirks - INFO - Excluded quirks specified by the `SB_DISABLE_QUIRKS` environment (comma-separated list): []
+2026-03-18 16:42:18,791 - speechbrain.utils.checkpoints - DEBUG - Registered checkpoint save hook for _save
+2026-03-18 16:42:18,791 - speechbrain.utils.checkpoints - DEBUG - Registered checkpoint load hook for _recover
+2026-03-18 16:42:23 - whisperx.asr - INFO - No language specified, language will be detected for each audio file (increases inference time)
+2026-03-18 16:42:23 - whisperx.vads.pyannote - INFO - Performing voice activity detection using Pyannote...
+2026-03-18 16:42:23,150 - pytorch_lightning.utilities.migration.utils - INFO - Lightning automatically upgraded your loaded checkpoint from v1.5.4 to v2.6.1. To apply the upgrade to your files permanently, run `python -m pytorch_lightning.utilities.upgrade_checkpoint whisperX/whisperx/assets/pytorch_model.bin`
+/home/pps-nipa/PoC/fish/stt/.venv/lib/python3.10/site-packages/pyannote/audio/core/io.py:212: UserWarning: torchaudio._backend.list_audio_backends has been deprecated. This deprecation is part of a large refactoring effort to transition TorchAudio into a maintenance phase. The decoding and encoding capabilities of PyTorch for both audio and video are being consolidated into TorchCodec. Please see https://github.com/pytorch/audio/issues/3902 for more information. It will be removed from the 2.9 release. 
+  torchaudio.list_audio_backends()
+2026-03-18 16:42:23,385 - src.service - INFO - Whisper model loaded.
+2026-03-18 16:42:23,385 - src.service - INFO - [Alignment] Directory found at src/resources/models/alignment. Files: ['ko', 'wav2vec2_fairseq_base_ls960_asr_ls960.pth', '.locks', 'models--kresnik--wav2vec2-large-xlsr-korean', 'en'] 
+2026-03-18 16:42:28,625 - src.service - INFO - [Diarization] Directory found at src/resources/models/diarization. Files: ['config.yaml', 'reproducible_research', 'handler.py', '.gitattributes', '.github'] ... and 3 more
+2026-03-18 16:42:28,625 - src.service - INFO - [VAD] Directory found at src/resources/models/vad. Files: ['example.png', 'config.yaml', 'pytorch_model.bin', '.gitattributes', 'LICENSE'] ... and 2 more
+2026-03-18 16:42:28,625 - src.service - INFO - [Embedding] Directory found at src/resources/models/embedding. Files: ['config.yaml', 'pytorch_model.bin', '.gitattributes', '.cache', 'README.md'] 
+2026-03-18 16:42:28,625 - src.service - INFO - Loading Diarization model (Offline Mode)...
+2026-03-18 16:42:28,628 - src.service - INFO - Using modified config at /tmp/tmpwyvkjmuc.yaml for offline loading.
+2026-03-18 16:42:29,329 - src.service - INFO - Diarization model loaded successfully (Offline).
+INFO:     Application startup complete.
+Model was trained with pyannote.audio 0.0.1, yours is 3.4.0. Bad things might happen unless you revert pyannote.audio to 0.x.
+Model was trained with torch 1.10.0+cu102, yours is 2.8.0+cu128. Bad things might happen unless you revert torch to 1.x.
+INFO:     220.117.27.215:34202 - "GET / HTTP/1.1" 404 Not Found
+INFO:     220.117.27.215:34202 - "GET /favicon.ico HTTP/1.1" 404 Not Found
+INFO:     220.117.27.215:34202 - "GET /dosc HTTP/1.1" 404 Not Found
+INFO:     220.117.27.215:33089 - "GET /docs HTTP/1.1" 200 OK
+INFO:     220.117.27.215:33089 - "GET /openapi.json HTTP/1.1" 200 OK
+INFO:     220.117.27.215:17831 - "POST /transcribe HTTP/1.1" 202 Accepted
+2026-03-18 16:53:42,377 - src.api - INFO - [Job 454aa178-860f-4652-9393-91da00f88903] Processing 9ea4e5df-71dd-45d7-a96c-e4ab91422458_mixed.wav...
+2026-03-18 16:53:42,647 - src.api - INFO - [Job 454aa178-860f-4652-9393-91da00f88903] Progress: transcribe 0%
+/home/pps-nipa/PoC/fish/stt/.venv/lib/python3.10/site-packages/pyannote/audio/utils/reproducibility.py:74: ReproducibilityWarning: TensorFloat-32 (TF32) has been disabled as it might lead to reproducibility issues and lower accuracy.
+It can be re-enabled by calling
+   >>> import torch
+   >>> torch.backends.cuda.matmul.allow_tf32 = True
+   >>> torch.backends.cudnn.allow_tf32 = True
+See https://github.com/pyannote/pyannote-audio/issues/1370 for more details.
+
+  warnings.warn(
+2026-03-18 16:53:54,112 - src.api - INFO - [Job 454aa178-860f-4652-9393-91da00f88903] Progress: transcribe 120%
+2026-03-18 16:53:54,112 - src.api - INFO - [Job 454aa178-860f-4652-9393-91da00f88903] Progress: align 60%
+2026-03-18 16:54:03,286 - src.api - INFO - [Job 454aa178-860f-4652-9393-91da00f88903] Progress: align 80%
+2026-03-18 16:54:03,286 - src.api - INFO - [Job 454aa178-860f-4652-9393-91da00f88903] Progress: diarize 70%
+2026-03-18 16:54:03,286 - src.service - INFO - Running Diarization...
+/home/pps-nipa/PoC/fish/stt/.venv/lib/python3.10/site-packages/pyannote/audio/models/blocks/pooling.py:104: UserWarning: std(): degrees of freedom is <= 0. Correction should be strictly less than the reduction factor (input numel divided by output numel). (Triggered internally at /pytorch/aten/src/ATen/native/ReduceOps.cpp:1839.)
+  std = sequences.std(dim=-1, correction=1)
+2026-03-18 16:54:15,560 - src.api - INFO - [Job 454aa178-860f-4652-9393-91da00f88903] Progress: diarize 130%
+2026-03-18 16:54:15,782 - src.api - INFO - [Job 454aa178-860f-4652-9393-91da00f88903] Completed in 33.41s
+INFO:     220.117.27.215:53878 - "GET /jobs/454aa178-860f-4652-9393-91da00f88903 HTTP/1.1" 200 OK
+WARNING:  Invalid HTTP request received.
+INFO:     206.168.34.192:24586 - "GET / HTTP/1.1" 404 Not Found
+WARNING:  Invalid HTTP request received.
+INFO:     206.168.34.192:36452 - "GET / HTTP/1.1" 404 Not Found
+INFO:     206.168.34.192:36466 - "PRI %2A HTTP/2.0" 404 Not Found
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+INFO:     206.168.34.192:46582 - "GET /login HTTP/1.1" 404 Not Found
+INFO:     220.117.27.215:18646 - "GET /docs HTTP/1.1" 200 OK
+INFO:     220.117.27.215:18646 - "GET /openapi.json HTTP/1.1" 200 OK
+INFO:     220.117.27.215:33952 - "GET /docs HTTP/1.1" 200 OK
+INFO:     220.117.27.215:33952 - "GET /openapi.json HTTP/1.1" 200 OK
+INFO:     220.117.27.215:48001 - "GET /docs HTTP/1.1" 200 OK
+INFO:     220.117.27.215:48001 - "GET /openapi.json HTTP/1.1" 200 OK
+INFO:     220.117.27.215:20763 - "GET /docs HTTP/1.1" 200 OK
+INFO:     220.117.27.215:20763 - "GET /openapi.json HTTP/1.1" 200 OK
+/home/pps-nipa/anaconda3/envs/whisperX/lib/python3.10/multiprocessing/resource_tracker.py:224: UserWarning: resource_tracker: There appear to be 1 leaked semaphore objects to clean up at shutdown
+  warnings.warn('resource_tracker: There appear to be %d '

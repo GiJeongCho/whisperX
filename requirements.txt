@@ -1,12 +1,5 @@
-ctranslate2>=4.5.0
-faster-whisper>=1.1.1
-nltk>=3.9.1
-numpy>=2.1.0
-pandas>=2.2.3
-pyannote-audio>=3.3.2,<4.0.0
-huggingface-hub<1.0.0
-transformers>=4.48.0
-triton>=3.3.0
-fastapi
-uvicorn
-python-multipart
+whisperx @ git+https://github.com/m-bain/whisperX.git@646f511e6bb47f8d2f0687e9976f8e7035b1e18d
+torchvision==0.23.0
+fastapi==0.135.1
+uvicorn==0.42.0
+python-multipart==0.0.22
