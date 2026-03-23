@@ -83,7 +83,6 @@ class WhisperXService:
         logger.info("Loading Diarization model (Offline Mode)...")
         
         try:
-            # 원본 config.yaml 읽기
             config_path = os.path.join(diar_dir, "config.yaml")
             if not os.path.exists(config_path):
                 raise FileNotFoundError(f"Diarization config not found at {config_path}")
@@ -91,40 +90,27 @@ class WhisperXService:
             with open(config_path, "r") as f:
                 config = yaml.safe_load(f)
 
-            # 로컬 경로 주입 (절대 경로로 변환)
             vad_model_path = os.path.abspath(os.path.join(vad_dir, "pytorch_model.bin"))
-            emb_model_path = os.path.abspath(os.path.join(emb_dir, "pytorch_model.bin"))
-            
-            # config 수정: HF repo ID -> 로컬 파일 경로
-            config["pipeline"]["params"]["segmentation"] = vad_model_path
-            config["pipeline"]["params"]["embedding"] = emb_model_path
+            emb_model_path = os.path.abspath(emb_dir)
 
-            plda_dir = os.path.abspath(os.path.join(diar_dir, "plda"))
-            plda_xvec = os.path.join(plda_dir, "xvec_transform.npz")
-            plda_file = os.path.join(plda_dir, "plda.npz")
-
-            logger.info(f"PLDA xvec: {plda_xvec} (exists: {os.path.exists(plda_xvec)})")
-            logger.info(f"PLDA plda: {plda_file} (exists: {os.path.exists(plda_file)})")
+            logger.info(f"Segmentation model: {vad_model_path} (exists: {os.path.exists(vad_model_path)})")
+            logger.info(f"Embedding model dir: {emb_model_path} (exists: {os.path.exists(emb_model_path)})")
 
             from pyannote.audio.pipelines.speaker_diarization import SpeakerDiarization
-            from pyannote.audio.core.plda import PLDA
 
-            plda_obj = PLDA(plda_xvec, plda_file)
+            pipeline_params = config.get("pipeline", {}).get("params", {})
 
             self.diarize_model = SpeakerDiarization(
                 segmentation=vad_model_path,
                 embedding=emb_model_path,
-                plda=plda_obj,
-                embedding_batch_size=config["pipeline"]["params"].get("embedding_batch_size", 32),
-                embedding_exclude_overlap=config["pipeline"]["params"].get("embedding_exclude_overlap", True),
-                segmentation_batch_size=config["pipeline"]["params"].get("segmentation_batch_size", 32),
+                clustering=pipeline_params.get("clustering", "AgglomerativeClustering"),
+                embedding_batch_size=pipeline_params.get("embedding_batch_size", 32),
+                embedding_exclude_overlap=pipeline_params.get("embedding_exclude_overlap", True),
+                segmentation_batch_size=pipeline_params.get("segmentation_batch_size", 32),
             )
 
             params = config.get("params", {})
-            instantiate_params = {}
-            if "segmentation" in params:
-                instantiate_params["segmentation"] = params["segmentation"]
-            self.diarize_model.instantiate(instantiate_params)
+            self.diarize_model.instantiate(params)
 
             if self.device == "cuda":
                 self.diarize_model.to(torch.device("cuda"))
