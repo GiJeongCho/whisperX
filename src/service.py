@@ -4,6 +4,7 @@ import logging
 import torch
 import whisperx
 import yaml
+import numpy as np
 import traceback
 from typing import Dict, Optional, Any, Callable
 from dataclasses import replace
@@ -11,22 +12,19 @@ import pandas as pd
 
 ProgressCallback = Callable[[str, int], None]
 
-# Configure Logging
 logger = logging.getLogger(__name__)
 
 class WhisperXService:
     def __init__(self):
         self.model_pipeline = None
         self.diarize_model = None
-        self.diarization_error = None  # 에러 메시지 저장용
-        self.align_models: Dict[str, tuple] = {}  # {lang: (model, metadata)}
-        
-        # Configuration
+        self.diarization_error = None
+        self.align_models: Dict[str, tuple] = {}
+
         self.model_dir = os.getenv("WHISPER_MODEL_DIR", "src/resources/models")
         self.whisper_arch = os.getenv("WHISPER_ARCH", "large-v3")
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
         self.compute_type = "float16" if torch.cuda.is_available() else "int8"
-        self.hf_token = os.getenv("HF_TOKEN") # Hugging Face Token for Pyannote
 
     def _log_directory_contents(self, path: str, name: str):
         """Helper to log contents of a model directory."""
@@ -42,7 +40,6 @@ class WhisperXService:
     def load_models(self):
         """Load all necessary models (Whisper, Alignment, Diarization)."""
         logger.info(f"Loading WhisperX models on {self.device} ({self.compute_type})...")
-        logger.info(f"HF_TOKEN detected: {'Yes' if self.hf_token else 'No'}")
         
         # 1. Load Whisper Model
         whisper_dir = os.path.join(self.model_dir, "whisper")
@@ -86,7 +83,7 @@ class WhisperXService:
             config_path = os.path.join(diar_dir, "config.yaml")
             if not os.path.exists(config_path):
                 raise FileNotFoundError(f"Diarization config not found at {config_path}")
-                
+
             with open(config_path, "r") as f:
                 config = yaml.safe_load(f)
 
@@ -95,6 +92,9 @@ class WhisperXService:
 
             logger.info(f"Segmentation model: {vad_model_path} (exists: {os.path.exists(vad_model_path)})")
             logger.info(f"Embedding model dir: {emb_model_path} (exists: {os.path.exists(emb_model_path)})")
+
+            xvec_path = os.path.join(diar_dir, "plda", "xvec_transform.npz")
+            logger.info(f"PLDA xvec_transform: {xvec_path} (exists: {os.path.exists(xvec_path)})")
 
             from pyannote.audio.pipelines.speaker_diarization import SpeakerDiarization
 
@@ -110,6 +110,17 @@ class WhisperXService:
             )
 
             params = config.get("params", {})
+
+            if os.path.exists(xvec_path):
+                xvec_data = np.load(xvec_path)
+                self.diarize_model.kaldi_plda = {
+                    "xvec_transform": xvec_data,
+                }
+                logger.info("PLDA xvec_transform loaded from local file.")
+
+            os.environ["PYANNOTE_CACHE"] = diar_dir
+            os.environ["HF_HUB_OFFLINE"] = "1"
+
             self.diarize_model.instantiate(params)
 
             if self.device == "cuda":
@@ -120,6 +131,7 @@ class WhisperXService:
 
         except Exception as e:
             logger.error(f"Failed to load Diarization model: {e}")
+            logger.error(traceback.format_exc())
             self.diarization_error = str(e)
             self.diarize_model = None
 

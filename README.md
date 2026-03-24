@@ -5,54 +5,80 @@
 
 ## 1. 사전 요구사항 (Prerequisites)
 
-- Python 3.10+
-- NVIDIA GPU (권장, CUDA 드라이버 설치 필요).
-- ffmpeg (오디오 처리를 위해 필수)
-- uv (패키지 매니저)
+- Docker + Docker Compose
+- NVIDIA GPU + [NVIDIA Container Toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html)
+- 모델 파일 (아래 "모델 다운로드" 섹션 참고)
 
-## 2. 설치 (Setup)
-
-`uv`를 사용하여 환경을 구성합니다. `pyproject.toml`에 상위 폴더의 `whisperX`가 로컬 의존성으로 등록되어 있습니다.
+## 2. 환경 설정 (Configuration)
 
 ```bash
-# ffmpeg 설치
-sudo apt-get update && sudo apt-get install ffmpeg
-
-# uv 설치 (미설치 시)
-curl -LsSf https://astral.sh/uv/install.sh | sh
-
-# 프로젝트 의존성 설치 (whisperX 포함)
-uv sync
+cp .env.example .env
 ```
+
+`.env` 파일을 필요에 맞게 수정합니다:
+
+| 변수 | 기본값 | 설명 |
+|------|--------|------|
+| `STT_PORT` | `8000` | 호스트에 노출할 포트 |
+| `MODEL_DIR` | `./models` | 모델 파일 경로 (호스트) |
+| `WHISPER_ARCH` | `large-v3` | Whisper 모델 아키텍처 |
+| `HF_TOKEN` | _(빈 값)_ | Hugging Face 토큰 (Pyannote 모델 다운로드용) |
 
 ## 3. 모델 다운로드 (Model Download)
 
 인터넷이 가능한 환경에서 모델을 다운로드합니다 (`large-v3` 기본).
 
 ```bash
-uv run src/resources/download_models.py --output ./models
+python src/resources/download_models.py --output ./models
 ```
 
-## 4. API 서버 실행 (Run Server)
-
-서버를 실행합니다. 기본 포트는 `8012`입니다.
+## 4. Docker 빌드 및 실행
 
 ```bash
-uv run src/v1/main.py
+# 빌드 및 실행
+docker compose up -d --build
+
+# 로그 확인
+docker compose logs -f stt
+
+# 중지
+docker compose down
 ```
 
-또는 개발 모드(코드 변경 시 자동 재시작):
+이미지만 빌드하려면:
+
 ```bash
-uv run uvicorn src.v1.main:app --host 0.0.0.0 --port 8012 --reload
+docker build -t stt-server .
 ```
 
 ## 5. API 사용 예시
 
 ```bash
-curl -X POST "http://localhost:8012/transcribe" \
+curl -X POST "http://localhost:8000/transcribe" \
   -H "accept: application/json" \
   -H "Content-Type: multipart/form-data" \
   -F "file=@/path/to/your/audio.mp3" \
   -F "language=ko" \
   -F "align=true"
+```
+
+헬스체크:
+
+```bash
+curl http://localhost:8000/health
+```
+
+## 6. 로컬 개발 (선택)
+
+Docker 없이 로컬에서 직접 실행하려면:
+
+```bash
+# uv 설치 (미설치 시)
+curl -LsSf https://astral.sh/uv/install.sh | sh
+
+# 의존성 설치
+uv sync
+
+# 서버 실행
+uv run uvicorn src.api:app --host 0.0.0.0 --port 8000 --reload
 ```

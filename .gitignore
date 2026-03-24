@@ -25,3 +25,10 @@ dist/
 build/
 *.egg-info/
 
+# Docker
+.env
+
+# Logs
+nohup.out
+server.log
+
