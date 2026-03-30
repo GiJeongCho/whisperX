@@ -47,8 +47,9 @@ class WhisperXService:
         os.makedirs(whisper_dir, exist_ok=True)
         
         try:
+            whisper_model_path = whisper_dir if os.path.isfile(os.path.join(whisper_dir, "model.bin")) else self.whisper_arch
             self.model_pipeline = whisperx.load_model(
-                self.whisper_arch, 
+                whisper_model_path, 
                 device=self.device, 
                 compute_type=self.compute_type, 
                 download_root=whisper_dir
