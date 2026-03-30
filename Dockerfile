@@ -21,6 +21,7 @@ COPY models/ ./src/resources/models/
 
 ENV HF_HUB_OFFLINE=1
 
-EXPOSE 8000
+ENV APP_PORT=6002
+EXPOSE ${APP_PORT}
 
-CMD ["uvicorn", "src.api:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD uvicorn src.api:app --host 0.0.0.0 --port ${APP_PORT}
