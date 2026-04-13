@@ -6,7 +6,7 @@ ENV PYTHONUNBUFFERED=1
 
 WORKDIR /app
 
-RUN apt-get update && apt-get install -y --no-install-recommends \
+RUN apt-get update && apt-get install -y \
     git \
     ffmpeg \
     curl \
@@ -15,13 +15,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY pyproject.toml .
-COPY src/ ./src/
-COPY models/ ./src/resources/models/
+COPY . .
 
-ENV HF_HUB_OFFLINE=1
-
+ENV WHISPER_MODEL_DIR=/app/src/resources/models
 ENV APP_PORT=6002
-EXPOSE ${APP_PORT}
 
-CMD uvicorn src.api:app --host 0.0.0.0 --port ${APP_PORT}
+EXPOSE ${APP_PORT}
+CMD ["sh", "-c", "python -m uvicorn src.api:app --host 0.0.0.0 --port ${APP_PORT}"]

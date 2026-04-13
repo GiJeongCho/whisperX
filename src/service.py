@@ -49,10 +49,9 @@ class WhisperXService:
         try:
             whisper_model_path = whisper_dir if os.path.isfile(os.path.join(whisper_dir, "model.bin")) else self.whisper_arch
             self.model_pipeline = whisperx.load_model(
-                whisper_model_path, 
+                whisper_dir,
                 device=self.device, 
                 compute_type=self.compute_type, 
-                download_root=whisper_dir
             )
             logger.info("Whisper model loaded.")
         except Exception as e:
@@ -89,15 +88,13 @@ class WhisperXService:
                 config = yaml.safe_load(f)
 
             vad_model_path = os.path.abspath(os.path.join(vad_dir, "pytorch_model.bin"))
-            emb_model_path = os.path.abspath(emb_dir)
+            emb_model_path = os.path.abspath(os.path.join(emb_dir, "pytorch_model.bin"))
 
             logger.info(f"Segmentation model: {vad_model_path} (exists: {os.path.exists(vad_model_path)})")
-            logger.info(f"Embedding model dir: {emb_model_path} (exists: {os.path.exists(emb_model_path)})")
+            logger.info(f"Embedding model: {emb_model_path} (exists: {os.path.exists(emb_model_path)})")
 
-            xvec_path = os.path.join(diar_dir, "plda", "xvec_transform.npz")
-            logger.info(f"PLDA xvec_transform: {xvec_path} (exists: {os.path.exists(xvec_path)})")
+            from pyannote.audio.pipelines import SpeakerDiarization
 
-            from pyannote.audio.pipelines.speaker_diarization import SpeakerDiarization
 
             pipeline_params = config.get("pipeline", {}).get("params", {})
 
@@ -110,19 +107,7 @@ class WhisperXService:
                 segmentation_batch_size=pipeline_params.get("segmentation_batch_size", 32),
             )
 
-            params = config.get("params", {})
-
-            if os.path.exists(xvec_path):
-                xvec_data = np.load(xvec_path)
-                self.diarize_model.kaldi_plda = {
-                    "xvec_transform": xvec_data,
-                }
-                logger.info("PLDA xvec_transform loaded from local file.")
-
-            os.environ["PYANNOTE_CACHE"] = diar_dir
-            os.environ["HF_HUB_OFFLINE"] = "1"
-
-            self.diarize_model.instantiate(params)
+            self.diarize_model.instantiate(config.get("params", {}))
 
             if self.device == "cuda":
                 self.diarize_model.to(torch.device("cuda"))
@@ -138,10 +123,14 @@ class WhisperXService:
 
     def _load_align_model(self, language_code: str, model_dir: str):
         if language_code not in self.align_models:
+            lang_dir = os.path.join(model_dir, language_code)
+            model_name = lang_dir if os.path.isdir(lang_dir) else None
+
             model, metadata = whisperx.load_align_model(
                 language_code=language_code,
                 device=self.device,
-                model_dir=model_dir
+                model_name=model_name,
+                model_dir=model_dir,
             )
             self.align_models[language_code] = (model, metadata)
     
